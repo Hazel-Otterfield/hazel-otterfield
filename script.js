@@ -1,5 +1,10 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const postContainer = document.getElementById('blog-posts');
+document.addEventListener('DOMContentLoaded', async function() {
+    const postContainer = document.getElementById('all-posts');
+
+    const ENVIRONMENT = 'prod'; // Change to 'prod' for production
+
+    const baseUrl = ENVIRONMENT === 'local' ? 'http://localhost:8080' : 'https://hazel-otterfield.uc.r.appspot.com';
+
 
     const blogPosts = [
         {
@@ -10,27 +15,33 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add more blog posts here
     ];
 
-    const poetryPosts = [
-        {
-            title: "Unblinking",
-            date: "December 16, 2023",
-            lines: [
-                "His eyes draw me in,",
-                "fringed with lashes as fine as spiders’ silk,",
-                "plush as an otter’s coat.",
-                "Comparisons of the colors to chocolate",
-                "and depth to the fathoms below",
-                "ring hollow and cliché.",
-                "They sing with the same melody",
-                "as the shadows in a redwood forest,",
-                "sheltering pockets of mist",
-                "and clutches of sweet sorrel.",
-                "They harbor something ancient,",
-                "yet something untouched by lifetimes lost."
-            ]
-        },
-        // Add more poetry posts here
-    ];
+    // Function to fetch poetry posts from your Node.js server
+    async function fetchPoetryPosts() {
+        try {
+            const response = await fetch(`${baseUrl}/poems`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("Could not fetch poems:", error);
+            return [];
+        }
+    }
+
+    // Fetch poetry posts
+    const poetryPosts = await fetchPoetryPosts();
+
+    // Convert poetry posts format if necessary
+    const formattedPoetryPosts = poetryPosts.map(row => {
+        // Assuming row[0] is title, row[1] is date, and row[2] is poem content
+        return {
+            title: row[2] || "Untitled",
+            date: row[3] || "No Date",
+            content: row[4] || "Content not available"
+        };
+    });
+    
 
     // Function to format the date for sorting
     function formatDateForSort(dateStr) {
@@ -38,12 +49,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
      // Combine and sort the posts
-     const combinedPosts = blogPosts.concat(poetryPosts.map(post => ({...post, isPoetry: true})))
+     const combinedPosts = blogPosts.concat(formattedPoetryPosts.map(post => ({...post, isPoetry: true})))
      .sort((a, b) => formatDateForSort(a.date) - formatDateForSort(b.date));
 
     // Function to display posts
     function displayPost(post) {
-        let contentHtml = post.isPoetry ? post.lines.join('<br>') : post.content;
+        const contentHtml = post.isPoetry ? post.content.replace(/\n/g, '<br>') : post.content; // Adjust for poem line breaks
         const postHtml = `
             <div class="${post.isPoetry ? 'poetry-post' : 'blog-post'}">
                 <h2>${post.title}</h2>
