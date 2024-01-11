@@ -38,9 +38,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         return {
             title: row[2] || "Untitled",
             date: row[3] || "No Date",
-            content: row[4] || "Content not available"
+            content: row[4] || "Content not available",
+            type: 'poetry'
         };
     });
+
+    async function fetchBookReviews() {
+        try {
+            const response = await fetch(`${baseUrl}/bookReviews`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return await response.json();
+        } catch (error) {
+            console.error("Could not fetch reviews:", error);
+            return [];
+        }
+    }
+
+    const reviewPosts = await fetchBookReviews();
+
+    const formattedReviewPosts = reviewPosts.map(row => {
+        return {
+            title: row[2] || "Untitled",
+            author: row[3] || "Unknown Author",
+            date: row[1] || "No Date",
+            content: row[7] || "Content not available",
+            type: 'review'
+        };
+    });
+
     
 
     // Function to format the date for sorting
@@ -49,21 +76,37 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
      // Combine and sort the posts
-     const combinedPosts = blogPosts.concat(formattedPoetryPosts.map(post => ({...post, isPoetry: true})))
-     .sort((a, b) => formatDateForSort(a.date) - formatDateForSort(b.date));
+     const combinedPosts = [...formattedPoetryPosts, ...formattedReviewPosts].sort((a, b) => formatDateForSort(a.date) - formatDateForSort(b.date));
 
     // Function to display posts
     function displayPost(post) {
-        const contentHtml = post.isPoetry ? post.content.replace(/\n/g, '<br>') : post.content; // Adjust for poem line breaks
-        const postHtml = `
-            <div class="${post.isPoetry ? 'poetry-post' : 'blog-post'}">
-                <h2>${post.title}</h2>
-                <p><em>Posted on: ${post.date}</em></p>
-                <p>${contentHtml}</p>
-            </div>
-        `;
+        let contentHtml, postHtml;
+        
+        if (post.type === 'poetry') {
+            contentHtml = post.content.replace(/\n/g, '<br>'); // Format line breaks for poetry
+            postHtml = `
+                <div class="poetry-post">
+                    <h2>${post.title}</h2>
+                    <p><em>Posted on: ${post.date}</em></p>
+                    <p>${contentHtml}</p>
+                </div>
+            `;
+        } else if (post.type === 'review') {
+            contentHtml = post.content.replace(/\n/g, '<br>'); // Replace newlines with <br> tags
+            postHtml = `
+                <div class="review-post">
+                    <h2>${post.title}</h2>
+                    <p><strong>Author:</strong> ${post.author}</p>
+                    <p><em>Reviewed on: ${post.date}</em></p>
+                    <p>${contentHtml}</p>
+                </div>
+            `;
+        }
+        
+    
         postContainer.innerHTML += postHtml;
     }
+    
 
     // Display each post
     combinedPosts.forEach(displayPost);
