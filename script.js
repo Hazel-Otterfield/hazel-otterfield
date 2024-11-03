@@ -75,8 +75,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         return new Date(dateStr).getTime();
     }
 
-     // Combine and sort the posts
-     const combinedPosts = [...formattedPoetryPosts, ...formattedReviewPosts].sort((a, b) => formatDateForSort(a.date) - formatDateForSort(b.date));
+     // Combine and sort the posts in descending order
+     const combinedPosts = [...formattedPoetryPosts, ...formattedReviewPosts].sort((a, b) => formatDateForSort(b.date) - formatDateForSort(a.date));
 
     // Function to display posts
     function displayPost(post) {
